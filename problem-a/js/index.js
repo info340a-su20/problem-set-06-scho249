@@ -2,7 +2,8 @@
 
 //An example of the response from searching for music on iTunes. Contains a
 //`results` property that is an array of objects representing individual songs
-const EXAMPLE_SEARCH_RESULTS = {results:[{
+const EXAMPLE_SEARCH_RESULTS = {
+  results: [{
     artistName: "Queen",
     trackName: "Bohemian Rhapsody",
     previewUrl: "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/Music3/v4/41/cc/ae/41ccae59-697a-414c-43b5-51bd4d88d535/mzaf_3150742134610995145.plus.aac.p.m4a",
@@ -17,7 +18,8 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
     trackName: "Formation",
     previewUrl: "https://audio-ssl.itunes.apple.com/apple-assets-us-std-000001/AudioPreview122/v4/5f/d7/5f/5fd75fd8-d0a5-ccb2-7822-bcaedee070fc/mzaf_3356445145838692600.plus.aac.p.m4a",
     artworkUrl100: "http://is1.mzstatic.com/image/thumb/Music20/v4/23/c1/9e/23c19e53-783f-ae47-7212-03cc9998bd84/source/100x100bb.jpg",
-}]};
+  }]
+};
 
 
 //For practice, define a function `renderTrack()` that takes as an argument an
@@ -35,6 +37,14 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //(e.g., `EXAMPLE_SEARCH_RESULTS.results[0]).
 
 
+function renderTrack(song) {
+  let newImg = document.createElement("img");
+  newImg.src = song.artworkUrl100;
+  newImg.alt = song.trackName;
+  newImg.title = song.trackName;
+  document.getElementById("records").appendChild(newImg);
+
+}
 
 //Define a function `renderSearchResults()` that takes in an object with a
 //`results` property containing an array of music tracks; the same format as
@@ -45,6 +55,18 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //
 //You can test this function by passing it the `EXAMPLE_SEARCH_RESULTS` object.
 
+function renderSearchResults(searchResults) {
+  let records = document.getElementById('records');
+  while (records.hasChildNodes()) {
+    records.removeChild(records.firstChild);
+  }
+  if (searchResults.results.length < 1) {
+    renderError(new Error("No results found"));
+  }
+  searchResults.results.forEach(function (track) {
+    renderTrack(track);
+  })
+}
 
 
 //Now it's the time to practice using `fetch()`! First, modify the `index.html`
@@ -69,7 +91,23 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //your favorite band (you CANNOT test it with the search button yet!)
 const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term={searchTerm}";
 
-
+function fetchTrackList(term) {
+  togglerSpinner();
+  let promise = fetch(URL_TEMPLATE.replace("{searchTerm}", term))
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(data) {
+    renderSearchResults(data);
+  })
+  .catch(function(err) {
+    renderError(err);
+  })
+  .then(function() {
+    togglerSpinner();
+  });
+  return promise;
+}
 
 
 //Add an event listener to the "search" button so that when it is clicked (and 
@@ -77,14 +115,25 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //user-entered `#searchQuery` value. Use the `preventDefault()` function to keep
 //the form from being submitted as usual (and navigating to a different page).
 
-
+let searchBtn = document.querySelector("button");
+searchBtn.addEventListener("click", function (event) {
+  event.preventDefault();
+  let userQuery = document.querySelector("#searchQuery").value;
+  fetchTrackList(userQuery);
+})
 
 //Next, add some error handling to the page. Define a function `renderError()`
 //that takes in an "Error object" and displays that object's `message` property
 //on the page. Display this by creating a `<p class="alert alert-danger">` and
 //placing that alert inside the `#records` element.
 
+function renderError(err) {
+  let alert = document.createElement("p");
+  alert.classList = "alert alert-danger";
+  alert.textContent = err.message;
+  document.querySelector("#records").appendChild(alert);
 
+}
 
 //Add the error handing to your program in two ways:
 //(1) Add a `.catch()` callback to the AJAX call in `fetchTrackList()` that
@@ -94,6 +143,8 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //    it an new Error object: `new Error("No results found")`
 //
 //You can test this error handling by trying to search with an empty query.
+
+
 
 
 //Finally, add a "loading spinner" as user feedback in case the download takes a
@@ -108,7 +159,10 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //after the ENTIRE request is completed (including after any error catching---
 //download the data and `catch()` the error, and `then()` show the spinner.
 
-
+function togglerSpinner() {
+  let spinner = document.querySelector(".fa-spinner");
+  spinner.classList.toggle('d-none');
+}
 
 
 //Optional extra: add the ability to "play" each track listing by clicking
@@ -123,18 +177,18 @@ const state = { previewAudio: new Audio() };
 
 //Plays the given track, spinning the given image.
 function playTrackPreview(track, img) {
-  if(state.previewAudio.src !== track.previewUrl){ //if a new track to play
-    document.querySelectorAll('img').forEach(function(element){
-      element.classList.remove('fa-spin');
+  if (state.previewAudio.src !== track.previewUrl) { //if a new track to play
+    document.querySelectorAll("img").forEach(function (element) {
+      element.classList.remove("fa-spin");
     }); //stop whoever else is spinning
 
     state.previewAudio.pause(); //pause current
     state.previewAudio = new Audio(track.previewUrl); //create new audio
     state.previewAudio.play(); //play new
     img.classList.add('fa-spin'); //start the spinning
-  } 
+  }
   else {
-    if(state.previewAudio.paused){ 
+    if (state.previewAudio.paused) {
       state.previewAudio.play();
     } else {
       state.previewAudio.pause();
@@ -144,16 +198,16 @@ function playTrackPreview(track, img) {
 }
 
 //Make functions and variables available to tester. DO NOT MODIFY THIS.
-if(typeof module !== 'undefined' && module.exports){
+if (typeof module !== 'undefined' && module.exports) {
   /* eslint-disable */
   module.exports.EXAMPLE_SEARCH_RESULTS = EXAMPLE_SEARCH_RESULTS;
-  if(typeof renderTrack !== 'undefined') 
+  if (typeof renderTrack !== 'undefined')
     module.exports.renderTrack = renderTrack;
-  if(typeof renderSearchResults !== 'undefined') 
+  if (typeof renderSearchResults !== 'undefined')
     module.exports.renderSearchResults = renderSearchResults;
-  if(typeof fetchTrackList !== 'undefined') 
+  if (typeof fetchTrackList !== 'undefined')
     module.exports.fetchTrackList = fetchTrackList;
-  if(typeof toggleSpinner !== 'undefined') 
+  if (typeof toggleSpinner !== 'undefined')
     module.exports.toggleSpinner = toggleSpinner;
-  module.exports.playTrackPreview = playTrackPreview;    
+  module.exports.playTrackPreview = playTrackPreview;
 }
